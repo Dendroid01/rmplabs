@@ -19,7 +19,7 @@ class MainActivity : AppCompatActivity() {
         navController = navHostFragment.navController
 
         val sessionManager = SessionManager(this)
-        if (sessionManager.isLoggedIn()) {
+        if (savedInstanceState == null && sessionManager.isLoggedIn()) {
             navController.navigate(R.id.mainFragment)
         }
     }

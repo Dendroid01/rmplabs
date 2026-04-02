@@ -71,8 +71,8 @@ class RegisterFragment : Fragment() {
                     salt = saltBase64
                 )
 
-                db.userDao().insertUser(user)
-                sessionManager.login(email)
+                val userId = db.userDao().insertUser(user).toInt()
+                sessionManager.login(userId)
 
                 Toast.makeText(requireContext(), "Регистрация успешна!", Toast.LENGTH_SHORT).show()
                 findNavController().navigate(R.id.action_register_to_main)

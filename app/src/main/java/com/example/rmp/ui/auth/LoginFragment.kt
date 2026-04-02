@@ -49,16 +49,18 @@ class LoginFragment : Fragment() {
                 val user = db.userDao().getUserByEmail(email)
                 if (user != null) {
                     val saltBytes = java.util.Base64.getDecoder().decode(user.salt)
-
                     val isCorrect = PasswordHasher.verify(password, saltBytes, user.passwordHash)
 
-                    if(isCorrect){
-                        sessionManager.login(email)
+                    if (isCorrect) {
+                        sessionManager.login(user.id)
                         findNavController().navigate(R.id.action_login_to_main)
+                        return@launch
                     }
-                } else {
-                    Toast.makeText(requireContext(), "Неверный email или пароль", Toast.LENGTH_SHORT).show()
                 }
+                    Toast.makeText(requireContext(),
+                        "Неверный email или пароль",
+                        Toast.LENGTH_SHORT
+                    ).show()
             }
         }
 

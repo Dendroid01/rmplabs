@@ -4,6 +4,7 @@ import java.security.SecureRandom
 import java.util.Base64
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec
+import java.security.MessageDigest
 
 object PasswordHasher {
 
@@ -25,6 +26,6 @@ object PasswordHasher {
 
     fun verify(password: String, salt: ByteArray, expectedHash: String): Boolean {
         val hash = hash(password, salt)
-        return hash == expectedHash
+        return MessageDigest.isEqual(hash.toByteArray(), expectedHash.toByteArray())
     }
 }

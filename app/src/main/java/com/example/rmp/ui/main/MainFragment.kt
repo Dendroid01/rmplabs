@@ -35,12 +35,23 @@ class MainFragment : Fragment() {
         val tvWelcome = view.findViewById<TextView>(R.id.tvWelcome)
         val btnLogout = view.findViewById<Button>(R.id.btnLogout)
 
-        val currentEmail = sessionManager.getCurrentUserEmail()
+        val currentId = sessionManager.getCurrentUserId()
 
         lifecycleScope.launch {
-            val user = currentEmail?.let { db.userDao().getUserByEmail(it) }
+            val user = if (currentId != -1) {
+                db.userDao().getUserById(currentId)
+            } else {
+                null
+            }
             tvWelcome.text = "Привет, ${user?.username ?: "пользователь"}! 🎵"
+
+            if (user == null) {
+                sessionManager.logout()
+                findNavController().navigate(R.id.action_main_to_login)
+                return@launch
+            }
         }
+
 
 
         btnLogout.setOnClickListener {
