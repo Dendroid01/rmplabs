@@ -9,6 +9,7 @@ class UserStorage(context: Context) {
         context.getSharedPreferences("music_app_prefs", Context.MODE_PRIVATE)
 
     companion object {
+        private const val KEY_ID       = "id"
         private const val KEY_USERNAME = "username"
         private const val KEY_EMAIL    = "email"
         private const val KEY_PASSWORD = "password"
@@ -16,6 +17,7 @@ class UserStorage(context: Context) {
 
     fun saveUser(user: User) {
         prefs.edit()
+            .putInt(KEY_ID, user.id)
             .putString(KEY_USERNAME, user.username)
             .putString(KEY_EMAIL, user.email)
             .putString(KEY_PASSWORD, user.password)
@@ -23,10 +25,14 @@ class UserStorage(context: Context) {
     }
 
     fun getUser(): User? {
+        val id       = prefs.getInt(KEY_ID, -1)
         val username = prefs.getString(KEY_USERNAME, null) ?: return null
         val email    = prefs.getString(KEY_EMAIL, null)    ?: return null
         val password = prefs.getString(KEY_PASSWORD, null) ?: return null
-        return User(username, email, password)
+
+        if (id == -1) return null
+
+        return User(id, username, email, password)
     }
 
     fun isUserRegistered(): Boolean {

@@ -7,16 +7,15 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.example.rmp.R
-import com.example.rmp.data.storage.UserStorage
+import com.example.rmp.data.storage.AppDatabase
 import com.example.rmp.session.SessionManager
 import com.google.android.material.textfield.TextInputEditText
+import kotlinx.coroutines.launch
 
 class LoginFragment : Fragment() {
-
-    private lateinit var userStorage: UserStorage
-    private lateinit var sessionManager: SessionManager
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -28,13 +27,13 @@ class LoginFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        userStorage    = UserStorage(requireContext())
-        sessionManager = SessionManager(requireContext())
+        val db             = AppDatabase.getInstance(requireContext())
+        val sessionManager = SessionManager(requireContext())
 
         val etEmail    = view.findViewById<TextInputEditText>(R.id.etEmail)
         val etPassword = view.findViewById<TextInputEditText>(R.id.etPassword)
-        val btnLogin         = view.findViewById<Button>(R.id.btnLogin)
-        val btnGoToRegister  = view.findViewById<Button>(R.id.btnGoToRegister)
+        val btnLogin        = view.findViewById<Button>(R.id.btnLogin)
+        val btnGoToRegister = view.findViewById<Button>(R.id.btnGoToRegister)
 
         btnLogin.setOnClickListener {
             val email    = etEmail.text.toString().trim()
@@ -45,13 +44,14 @@ class LoginFragment : Fragment() {
                 return@setOnClickListener
             }
 
-            // Проверяем данные
-            val savedUser = userStorage.getUser()
-            if (savedUser != null && savedUser.email == email && savedUser.password == password) {
-                sessionManager.login(email)
-                findNavController().navigate(R.id.action_login_to_main)
-            } else {
-                Toast.makeText(requireContext(), "Неверный email или пароль", Toast.LENGTH_SHORT).show()
+            lifecycleScope.launch {
+                val user = db.userDao().getUserByEmailAndPassword(email, password)
+                if (user != null) {
+                    sessionManager.login(email)
+                    findNavController().navigate(R.id.action_login_to_main)
+                } else {
+                    Toast.makeText(requireContext(), "Неверный email или пароль", Toast.LENGTH_SHORT).show()
+                }
             }
         }
 

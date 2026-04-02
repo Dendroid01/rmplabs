@@ -7,17 +7,16 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.example.rmp.R
 import com.example.rmp.data.model.User
-import com.example.rmp.data.storage.UserStorage
+import com.example.rmp.data.storage.AppDatabase
 import com.example.rmp.session.SessionManager
 import com.google.android.material.textfield.TextInputEditText
+import kotlinx.coroutines.launch
 
 class RegisterFragment : Fragment() {
-
-    private lateinit var userStorage: UserStorage
-    private lateinit var sessionManager: SessionManager
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -29,21 +28,20 @@ class RegisterFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        userStorage    = UserStorage(requireContext())
-        sessionManager = SessionManager(requireContext())
+        val db             = AppDatabase.getInstance(requireContext())
+        val sessionManager = SessionManager(requireContext())
 
         val etUsername = view.findViewById<TextInputEditText>(R.id.etUsername)
         val etEmail    = view.findViewById<TextInputEditText>(R.id.etEmail)
         val etPassword = view.findViewById<TextInputEditText>(R.id.etPassword)
-        val btnRegister      = view.findViewById<Button>(R.id.btnRegister)
-        val btnGoToLogin     = view.findViewById<Button>(R.id.btnGoToLogin)
+        val btnRegister    = view.findViewById<Button>(R.id.btnRegister)
+        val btnGoToLogin   = view.findViewById<Button>(R.id.btnGoToLogin)
 
         btnRegister.setOnClickListener {
             val username = etUsername.text.toString().trim()
             val email    = etEmail.text.toString().trim()
             val password = etPassword.text.toString().trim()
 
-            // Простая валидация
             if (username.isEmpty() || email.isEmpty() || password.isEmpty()) {
                 Toast.makeText(requireContext(), "Заполните все поля", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
@@ -53,13 +51,20 @@ class RegisterFragment : Fragment() {
                 return@setOnClickListener
             }
 
-            // Сохраняем пользователя и создаём сессию
-            val user = User(username, email, password)
-            userStorage.saveUser(user)
-            sessionManager.login(email)
+            lifecycleScope.launch {
+                val existingUser = db.userDao().getUserByEmail(email)
+                if (existingUser != null) {
+                    Toast.makeText(requireContext(), "Email уже занят", Toast.LENGTH_SHORT).show()
+                    return@launch
+                }
 
-            Toast.makeText(requireContext(), "Регистрация успешна!", Toast.LENGTH_SHORT).show()
-            findNavController().navigate(R.id.action_register_to_main)
+                val user = User(username = username, email = email, password = password)
+                db.userDao().insertUser(user)
+                sessionManager.login(email)
+
+                Toast.makeText(requireContext(), "Регистрация успешна!", Toast.LENGTH_SHORT).show()
+                findNavController().navigate(R.id.action_register_to_main)
+            }
         }
 
         btnGoToLogin.setOnClickListener {
