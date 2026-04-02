@@ -11,6 +11,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.example.rmp.R
 import com.example.rmp.data.storage.AppDatabase
+import com.example.rmp.data.storage.PasswordHasher
 import com.example.rmp.session.SessionManager
 import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.launch
@@ -45,10 +46,16 @@ class LoginFragment : Fragment() {
             }
 
             lifecycleScope.launch {
-                val user = db.userDao().getUserByEmailAndPassword(email, password)
+                val user = db.userDao().getUserByEmail(email)
                 if (user != null) {
-                    sessionManager.login(email)
-                    findNavController().navigate(R.id.action_login_to_main)
+                    val saltBytes = java.util.Base64.getDecoder().decode(user.salt)
+
+                    val isCorrect = PasswordHasher.verify(password, saltBytes, user.passwordHash)
+
+                    if(isCorrect){
+                        sessionManager.login(email)
+                        findNavController().navigate(R.id.action_login_to_main)
+                    }
                 } else {
                     Toast.makeText(requireContext(), "Неверный email или пароль", Toast.LENGTH_SHORT).show()
                 }

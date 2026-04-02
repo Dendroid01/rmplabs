@@ -12,6 +12,7 @@ import androidx.navigation.fragment.findNavController
 import com.example.rmp.R
 import com.example.rmp.data.model.User
 import com.example.rmp.data.storage.AppDatabase
+import com.example.rmp.data.storage.PasswordHasher
 import com.example.rmp.session.SessionManager
 import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.launch
@@ -58,7 +59,18 @@ class RegisterFragment : Fragment() {
                     return@launch
                 }
 
-                val user = User(username = username, email = email, password = password)
+                val saltBytes = PasswordHasher.generateSalt()
+                val saltBase64 = java.util.Base64.getEncoder().encodeToString(saltBytes)
+
+                val passwordHash = PasswordHasher.hash(password, saltBytes)
+
+                val user = User(
+                    username = username,
+                    email = email,
+                    passwordHash = passwordHash,
+                    salt = saltBase64
+                )
+
                 db.userDao().insertUser(user)
                 sessionManager.login(email)
 
