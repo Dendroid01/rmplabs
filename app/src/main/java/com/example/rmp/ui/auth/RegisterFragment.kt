@@ -5,82 +5,82 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.example.rmp.R
-import com.example.rmp.data.model.User
-import com.example.rmp.data.storage.AppDatabase
-import com.example.rmp.data.storage.PasswordHasher
-import com.example.rmp.session.SessionManager
 import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.launch
 
 class RegisterFragment : Fragment() {
 
+    private val viewModel: AuthViewModel by viewModels()
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
-        return inflater.inflate(R.layout.fragment_register, container, false)
-    }
+    ): View? = inflater.inflate(R.layout.fragment_register, container, false)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val db             = AppDatabase.getInstance(requireContext())
-        val sessionManager = SessionManager(requireContext())
-
         val etUsername = view.findViewById<TextInputEditText>(R.id.etUsername)
-        val etEmail    = view.findViewById<TextInputEditText>(R.id.etEmail)
+        val etEmail = view.findViewById<TextInputEditText>(R.id.etEmail)
         val etPassword = view.findViewById<TextInputEditText>(R.id.etPassword)
-        val btnRegister    = view.findViewById<Button>(R.id.btnRegister)
-        val btnGoToLogin   = view.findViewById<Button>(R.id.btnGoToLogin)
+        val btnRegister = view.findViewById<Button>(R.id.btnRegister)
+        val btnGoToLogin = view.findViewById<Button>(R.id.btnGoToLogin)
+        val progressBar = view.findViewById<ProgressBar>(R.id.progressBar)
 
         btnRegister.setOnClickListener {
-            val username = etUsername.text.toString().trim()
-            val email    = etEmail.text.toString().trim()
-            val password = etPassword.text.toString().trim()
-
-            if (username.isEmpty() || email.isEmpty() || password.isEmpty()) {
-                Toast.makeText(requireContext(), "Заполните все поля", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-            if (password.length < 6) {
-                Toast.makeText(requireContext(), "Пароль минимум 6 символов", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            lifecycleScope.launch {
-                val existingUser = db.userDao().getUserByEmail(email)
-                if (existingUser != null) {
-                    Toast.makeText(requireContext(), "Email уже занят", Toast.LENGTH_SHORT).show()
-                    return@launch
-                }
-
-                val saltBytes = PasswordHasher.generateSalt()
-                val saltBase64 = java.util.Base64.getEncoder().encodeToString(saltBytes)
-
-                val passwordHash = PasswordHasher.hash(password, saltBytes)
-
-                val user = User(
-                    username = username,
-                    email = email,
-                    passwordHash = passwordHash,
-                    salt = saltBase64
-                )
-
-                val userId = db.userDao().insertUser(user).toInt()
-                sessionManager.login(userId)
-
-                Toast.makeText(requireContext(), "Регистрация успешна!", Toast.LENGTH_SHORT).show()
-                findNavController().navigate(R.id.action_register_to_main)
-            }
+            viewModel.register(
+                username = etUsername.text.toString().trim(),
+                email = etEmail.text.toString().trim(),
+                password = etPassword.text.toString().trim()
+            )
         }
 
         btnGoToLogin.setOnClickListener {
             findNavController().navigate(R.id.action_register_to_login)
+        }
+
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(
+                androidx.lifecycle.Lifecycle.State.STARTED
+            ) {
+                viewModel.state.collect { state ->
+                    when (state) {
+                        is AuthState.Idle -> {
+                            progressBar.visibility = View.GONE
+                            btnRegister.isEnabled = true
+                        }
+
+                        is AuthState.Loading -> {
+                            progressBar.visibility = View.VISIBLE
+                            btnRegister.isEnabled = false
+                        }
+
+                        is AuthState.Success -> {
+                            progressBar.visibility = View.GONE
+                            btnRegister.isEnabled = true
+                            findNavController().navigate(R.id.action_register_to_main)
+                            viewModel.resetState()
+                        }
+
+                        is AuthState.Error -> {
+                            progressBar.visibility = View.GONE
+                            btnRegister.isEnabled = true
+                            Toast.makeText(requireContext(), state.message, Toast.LENGTH_SHORT)
+                                .show()
+                            viewModel.resetState()
+                        }
+                    }
+                }
+            }
         }
     }
 }

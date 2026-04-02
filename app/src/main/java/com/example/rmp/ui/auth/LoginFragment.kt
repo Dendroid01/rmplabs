@@ -5,67 +5,75 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.example.rmp.R
-import com.example.rmp.data.storage.AppDatabase
-import com.example.rmp.data.storage.PasswordHasher
-import com.example.rmp.session.SessionManager
 import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.launch
+import androidx.lifecycle.repeatOnLifecycle
 
 class LoginFragment : Fragment() {
+
+    private val viewModel: AuthViewModel by viewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
-        return inflater.inflate(R.layout.fragment_login, container, false)
-    }
+    ): View? = inflater.inflate(R.layout.fragment_login, container, false)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val db             = AppDatabase.getInstance(requireContext())
-        val sessionManager = SessionManager(requireContext())
-
-        val etEmail    = view.findViewById<TextInputEditText>(R.id.etEmail)
+        val etEmail = view.findViewById<TextInputEditText>(R.id.etEmail)
         val etPassword = view.findViewById<TextInputEditText>(R.id.etPassword)
-        val btnLogin        = view.findViewById<Button>(R.id.btnLogin)
+        val btnLogin = view.findViewById<Button>(R.id.btnLogin)
         val btnGoToRegister = view.findViewById<Button>(R.id.btnGoToRegister)
+        val progressBar = view.findViewById<ProgressBar>(R.id.progressBar)
 
         btnLogin.setOnClickListener {
-            val email    = etEmail.text.toString().trim()
-            val password = etPassword.text.toString().trim()
-
-            if (email.isEmpty() || password.isEmpty()) {
-                Toast.makeText(requireContext(), "Заполните все поля", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            lifecycleScope.launch {
-                val user = db.userDao().getUserByEmail(email)
-                if (user != null) {
-                    val saltBytes = java.util.Base64.getDecoder().decode(user.salt)
-                    val isCorrect = PasswordHasher.verify(password, saltBytes, user.passwordHash)
-
-                    if (isCorrect) {
-                        sessionManager.login(user.id)
-                        findNavController().navigate(R.id.action_login_to_main)
-                        return@launch
-                    }
-                }
-                    Toast.makeText(requireContext(),
-                        "Неверный email или пароль",
-                        Toast.LENGTH_SHORT
-                    ).show()
-            }
+            viewModel.login(
+                email = etEmail.text.toString().trim(),
+                password = etPassword.text.toString().trim()
+            )
         }
 
         btnGoToRegister.setOnClickListener {
             findNavController().navigate(R.id.action_login_to_register)
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(
+                androidx.lifecycle.Lifecycle.State.STARTED
+            ) {
+                viewModel.state.collect { state ->
+                    when (state) {
+                        is AuthState.Idle -> {
+                            progressBar.visibility = View.GONE
+                        }
+
+                        is AuthState.Loading -> {
+                            progressBar.visibility = View.VISIBLE
+                        }
+
+                        is AuthState.Success -> {
+                            progressBar.visibility = View.GONE
+                            findNavController().navigate(R.id.action_login_to_main)
+                            viewModel.resetState()
+                        }
+
+                        is AuthState.Error -> {
+                            progressBar.visibility = View.GONE
+                            Toast.makeText(requireContext(), state.message, Toast.LENGTH_SHORT)
+                                .show()
+                            viewModel.resetState()
+                        }
+                    }
+                }
+            }
         }
     }
 }

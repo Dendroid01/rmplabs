@@ -7,56 +7,50 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
 import androidx.fragment.app.Fragment
-import androidx.navigation.fragment.findNavController
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.fragment.findNavController
 import com.example.rmp.R
-import com.example.rmp.data.storage.AppDatabase
-import com.example.rmp.session.SessionManager
 import kotlinx.coroutines.launch
 
 class MainFragment : Fragment() {
 
-    private lateinit var sessionManager: SessionManager
-    private lateinit var db: AppDatabase
+    private val viewModel: MainViewModel by viewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
-        return inflater.inflate(R.layout.fragment_main, container, false)
-    }
+    ): View? = inflater.inflate(R.layout.fragment_main, container, false)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        sessionManager = SessionManager(requireContext())
-        db    = AppDatabase.getInstance(requireContext())
-
         val tvWelcome = view.findViewById<TextView>(R.id.tvWelcome)
         val btnLogout = view.findViewById<Button>(R.id.btnLogout)
 
-        val currentId = sessionManager.getCurrentUserId()
-
-        lifecycleScope.launch {
-            val user = if (currentId != -1) {
-                db.userDao().getUserById(currentId)
-            } else {
-                null
-            }
-            tvWelcome.text = "Привет, ${user?.username ?: "пользователь"}! 🎵"
-
-            if (user == null) {
-                sessionManager.logout()
-                findNavController().navigate(R.id.action_main_to_login)
-                return@launch
-            }
+        btnLogout.setOnClickListener {
+            viewModel.logout()
         }
 
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.state.collect { state ->
+                    when (state) {
+                        is MainState.Idle -> {}
+                        is MainState.UserLoaded -> {
+                            tvWelcome.text = "Привет, ${state.user.username}! 🎵"
+                        }
 
+                        is MainState.LoggedOut -> {
+                            findNavController().navigate(R.id.action_main_to_login)
+                        }
+                    }
+                }
+            }
 
-        btnLogout.setOnClickListener {
-            sessionManager.logout()
-            findNavController().navigate(R.id.action_main_to_login)
+            viewModel.loadCurrentUser()
         }
     }
 }

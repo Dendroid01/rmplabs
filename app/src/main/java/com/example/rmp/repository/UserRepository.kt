@@ -12,11 +12,7 @@ class UserRepository(context: Context) {
     private val userDao = AppDatabase.getInstance(context).userDao()
     private val sessionManager = SessionManager(context)
 
-    suspend fun register(
-        username: String,
-        email: String,
-        password: String
-    ): Result<Unit> {
+    suspend fun register(username: String, email: String, password: String): Result<Unit> {
 
         val existing = userDao.getUserByEmail(email)
         if (existing != null) {
@@ -25,7 +21,6 @@ class UserRepository(context: Context) {
 
         val saltBytes = PasswordHasher.generateSalt()
         val saltBase64 = Base64.getEncoder().encodeToString(saltBytes)
-
         val passwordHash = PasswordHasher.hash(password, saltBytes)
 
         val user = User(
@@ -61,13 +56,9 @@ class UserRepository(context: Context) {
         sessionManager.logout()
     }
 
-    fun isLoggedIn(): Boolean {
-        return sessionManager.isLoggedIn()
-    }
+    fun isLoggedIn() = sessionManager.isLoggedIn()
 
-    fun getCurrentUserId(): Int {
-        return sessionManager.getCurrentUserId()
-    }
+    fun getCurrentUserId() = sessionManager.getCurrentUserId()
 
     suspend fun getCurrentUser(): User? {
         val id = sessionManager.getCurrentUserId()
