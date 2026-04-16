@@ -24,6 +24,7 @@ abstract class AppDatabase : RoomDatabase() {
                 )
                     .fallbackToDestructiveMigration(true)
                     .build()
+                    .also { INSTANCE = it }
             }
         }
     }

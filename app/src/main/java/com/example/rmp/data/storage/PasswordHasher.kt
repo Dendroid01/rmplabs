@@ -26,6 +26,7 @@ object PasswordHasher {
 
     fun verify(password: String, salt: ByteArray, expectedHash: String): Boolean {
         val hash = hash(password, salt)
-        return MessageDigest.isEqual(hash.toByteArray(), expectedHash.toByteArray())
+        return MessageDigest.isEqual(
+            Base64.getDecoder().decode(hash), Base64.getDecoder().decode(expectedHash))
     }
 }

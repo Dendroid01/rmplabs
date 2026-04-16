@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -29,6 +30,7 @@ class MainFragment : Fragment() {
 
         val tvWelcome = view.findViewById<TextView>(R.id.tvWelcome)
         val btnLogout = view.findViewById<Button>(R.id.btnLogout)
+        val progressBar = view.findViewById<ProgressBar>(R.id.progressBar)
 
         btnLogout.setOnClickListener {
             viewModel.logout()
@@ -38,19 +40,27 @@ class MainFragment : Fragment() {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.state.collect { state ->
                     when (state) {
-                        is MainState.Idle -> {}
+                        is MainState.Loading -> {
+                            progressBar.visibility = View.VISIBLE
+                            tvWelcome.visibility = View.GONE
+                            btnLogout.isEnabled = false
+                        }
+                        is MainState.Idle -> {
+                            progressBar.visibility = View.GONE
+                        }
                         is MainState.UserLoaded -> {
+                            progressBar.visibility = View.GONE
+                            tvWelcome.visibility = View.VISIBLE
+                            btnLogout.isEnabled = true
                             tvWelcome.text = "Привет, ${state.user.username}! 🎵"
                         }
-
                         is MainState.LoggedOut -> {
+                            progressBar.visibility = View.GONE
                             findNavController().navigate(R.id.action_main_to_login)
                         }
                     }
                 }
             }
-
-            viewModel.loadCurrentUser()
         }
     }
 }

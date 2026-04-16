@@ -18,7 +18,7 @@ import kotlinx.coroutines.launch
 
 class RegisterFragment : Fragment() {
 
-    private val viewModel: AuthViewModel by viewModels()
+    private val viewModel: RegisterViewModel by viewModels()  // ← изменено
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -47,35 +47,28 @@ class RegisterFragment : Fragment() {
             findNavController().navigate(R.id.action_register_to_login)
         }
 
-
         viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(
-                androidx.lifecycle.Lifecycle.State.STARTED
-            ) {
+            viewLifecycleOwner.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
                 viewModel.state.collect { state ->
                     when (state) {
-                        is AuthState.Idle -> {
+                        is RegisterState.Idle -> {
                             progressBar.visibility = View.GONE
                             btnRegister.isEnabled = true
                         }
-
-                        is AuthState.Loading -> {
+                        is RegisterState.Loading -> {
                             progressBar.visibility = View.VISIBLE
                             btnRegister.isEnabled = false
                         }
-
-                        is AuthState.Success -> {
+                        is RegisterState.Success -> {
                             progressBar.visibility = View.GONE
                             btnRegister.isEnabled = true
                             findNavController().navigate(R.id.action_register_to_main)
                             viewModel.resetState()
                         }
-
-                        is AuthState.Error -> {
+                        is RegisterState.Error -> {
                             progressBar.visibility = View.GONE
                             btnRegister.isEnabled = true
-                            Toast.makeText(requireContext(), state.message, Toast.LENGTH_SHORT)
-                                .show()
+                            Toast.makeText(requireContext(), state.message, Toast.LENGTH_SHORT).show()
                             viewModel.resetState()
                         }
                     }

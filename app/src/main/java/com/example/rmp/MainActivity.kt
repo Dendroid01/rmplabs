@@ -19,8 +19,10 @@ class MainActivity : AppCompatActivity() {
         navController = navHostFragment.navController
 
         val sessionManager = SessionManager(this)
-        if (savedInstanceState == null && sessionManager.isLoggedIn()) {
-            navController.navigate(R.id.mainFragment)
+        if (sessionManager.isLoggedIn()) {
+            navController.navigate(R.id.mainFragment) {
+                popUpTo(R.id.loginFragment) { inclusive = true }
+            }
         }
     }
 }

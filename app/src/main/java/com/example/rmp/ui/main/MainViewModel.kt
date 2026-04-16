@@ -6,47 +6,43 @@ import androidx.lifecycle.viewModelScope
 import com.example.rmp.data.storage.AppDatabase
 import com.example.rmp.session.SessionManager
 import com.example.rmp.data.model.User
+import com.example.rmp.repository.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 sealed class MainState {
-    object Idle : MainState()
+    object Loading : MainState()
     data class UserLoaded(val user: User) : MainState()
     object LoggedOut : MainState()
+    object Idle : MainState()
 }
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val sessionManager = SessionManager(application)
-    private val db = AppDatabase.getInstance(application)
+    private val repository = UserRepository(application)
 
-    private val _state = MutableStateFlow<MainState>(MainState.Idle)
+    private val _state = MutableStateFlow<MainState>(MainState.Loading)
     val state: StateFlow<MainState> = _state
 
-    init{
+    init {
         loadCurrentUser()
     }
-    fun loadCurrentUser() {
-        val currentId = sessionManager.getCurrentUserId()
-        if (currentId == -1) {
-            _state.value = MainState.LoggedOut
-            return
-        }
 
+    fun loadCurrentUser() {
         viewModelScope.launch {
-            val user = db.userDao().getUserById(currentId)
-            if (user != null) {
-                _state.value = MainState.UserLoaded(user)
+            _state.value = MainState.Loading
+            val user = repository.getCurrentUser()
+            _state.value = if (user != null) {
+                MainState.UserLoaded(user)
             } else {
-                sessionManager.logout()
-                _state.value = MainState.LoggedOut
+                MainState.LoggedOut
             }
         }
     }
 
     fun logout() {
-        sessionManager.logout()
+        repository.logout()
         _state.value = MainState.LoggedOut
     }
 }

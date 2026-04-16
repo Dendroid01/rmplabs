@@ -10,15 +10,15 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.example.rmp.R
 import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.launch
-import androidx.lifecycle.repeatOnLifecycle
 
 class LoginFragment : Fragment() {
 
-    private val viewModel: AuthViewModel by viewModels()
+    private val viewModel: LoginViewModel by viewModels()  // ← изменено
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -46,29 +46,23 @@ class LoginFragment : Fragment() {
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(
-                androidx.lifecycle.Lifecycle.State.STARTED
-            ) {
+            viewLifecycleOwner.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
                 viewModel.state.collect { state ->
                     when (state) {
-                        is AuthState.Idle -> {
+                        is LoginState.Idle -> {
                             progressBar.visibility = View.GONE
                         }
-
-                        is AuthState.Loading -> {
+                        is LoginState.Loading -> {
                             progressBar.visibility = View.VISIBLE
                         }
-
-                        is AuthState.Success -> {
+                        is LoginState.Success -> {
                             progressBar.visibility = View.GONE
                             findNavController().navigate(R.id.action_login_to_main)
                             viewModel.resetState()
                         }
-
-                        is AuthState.Error -> {
+                        is LoginState.Error -> {
                             progressBar.visibility = View.GONE
-                            Toast.makeText(requireContext(), state.message, Toast.LENGTH_SHORT)
-                                .show()
+                            Toast.makeText(requireContext(), state.message, Toast.LENGTH_SHORT).show()
                             viewModel.resetState()
                         }
                     }
