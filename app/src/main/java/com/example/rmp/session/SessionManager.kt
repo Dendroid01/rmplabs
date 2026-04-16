@@ -9,20 +9,20 @@ class SessionManager(context: Context) {
 
     companion object {
         private const val KEY_IS_LOGGED_IN    = "is_logged_in"
-        private const val KEY_CURRENT_USER    = "current_user_email"
+        private const val KEY_CURRENT_USER_ID   = "current_user_id"
     }
 
-    fun login(email: String) {
+    fun login(userId: Int) {
         prefs.edit()
             .putBoolean(KEY_IS_LOGGED_IN, true)
-            .putString(KEY_CURRENT_USER, email)
+            .putInt(KEY_CURRENT_USER_ID, userId)
             .apply()
     }
 
     fun logout() {
         prefs.edit()
             .putBoolean(KEY_IS_LOGGED_IN, false)
-            .remove(KEY_CURRENT_USER)
+            .remove(KEY_CURRENT_USER_ID)
             .apply()
     }
 
@@ -30,7 +30,7 @@ class SessionManager(context: Context) {
         return prefs.getBoolean(KEY_IS_LOGGED_IN, false)
     }
 
-    fun getCurrentUserEmail(): String? {
-        return prefs.getString(KEY_CURRENT_USER, null)
+    fun getCurrentUserId(): Int {
+        return prefs.getInt(KEY_CURRENT_USER_ID, -1)
     }
 }

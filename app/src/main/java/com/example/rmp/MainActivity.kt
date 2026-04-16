@@ -20,7 +20,9 @@ class MainActivity : AppCompatActivity() {
 
         val sessionManager = SessionManager(this)
         if (sessionManager.isLoggedIn()) {
-            navController.navigate(R.id.mainFragment)
+            navController.navigate(R.id.mainFragment) {
+                popUpTo(R.id.loginFragment) { inclusive = true }
+            }
         }
     }
 }
