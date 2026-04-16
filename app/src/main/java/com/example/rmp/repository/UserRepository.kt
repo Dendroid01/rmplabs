@@ -31,7 +31,7 @@ class UserRepository(context: Context) {
         )
 
         val userId = userDao.insertUser(user).toInt()
-        sessionManager.login(userId)
+        sessionManager.login(userId, username)
 
         return Result.success(Unit)
     }
@@ -48,7 +48,7 @@ class UserRepository(context: Context) {
             return Result.failure(Exception("Неверный email или пароль"))
         }
 
-        sessionManager.login(user.id)
+        sessionManager.login(user.id, user.username)
         return Result.success(Unit)
     }
 

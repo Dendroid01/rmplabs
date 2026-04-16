@@ -15,6 +15,7 @@ import androidx.navigation.fragment.findNavController
 import com.example.rmp.R
 import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.launch
+import com.example.rmp.ui.auth.AuthActivity
 
 class RegisterFragment : Fragment() {
 
@@ -62,7 +63,7 @@ class RegisterFragment : Fragment() {
                         is RegisterState.Success -> {
                             progressBar.visibility = View.GONE
                             btnRegister.isEnabled = true
-                            findNavController().navigate(R.id.action_register_to_main)
+                            (requireActivity() as AuthActivity).onAuthSuccess()
                             viewModel.resetState()
                         }
                         is RegisterState.Error -> {

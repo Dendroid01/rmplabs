@@ -1,27 +1,35 @@
 package com.example.rmp
 
 import android.os.Bundle
-import androidx.appcompat.app.AppCompatActivity
-import androidx.navigation.NavController
-import androidx.navigation.fragment.NavHostFragment
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import com.example.rmp.session.SessionManager
+import com.example.rmp.ui.AppNavigation
+import com.example.rmp.ui.auth.AuthActivity
 
-class MainActivity : AppCompatActivity() {
-
-    private lateinit var navController: NavController
-
+class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-
-        val navHostFragment = supportFragmentManager
-            .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
-        navController = navHostFragment.navController
 
         val sessionManager = SessionManager(this)
-        if (sessionManager.isLoggedIn()) {
-            navController.navigate(R.id.mainFragment) {
-                popUpTo(R.id.loginFragment) { inclusive = true }
+        if (!sessionManager.isLoggedIn()) {
+            startActivity(android.content.Intent(this, AuthActivity::class.java))
+            finish()
+            return
+        }
+
+        // Получаем username из Room (для простоты — через SharedPrefs или передаём)
+        val username = sessionManager.getSavedUsername() ?: "Пользователь"
+
+        enableEdgeToEdge()
+        setContent {
+            MaterialTheme {
+                Surface {
+                    AppNavigation(username = username)
+                }
             }
         }
     }
