@@ -21,7 +21,6 @@ class MainActivity : ComponentActivity() {
             return
         }
 
-        // Получаем username из Room (для простоты — через SharedPrefs или передаём)
         val username = sessionManager.getSavedUsername() ?: "Пользователь"
 
         enableEdgeToEdge()

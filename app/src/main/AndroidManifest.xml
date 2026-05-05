@@ -22,7 +22,6 @@
             </intent-filter>
         </activity>
 
-        <!-- Добавить AuthActivity -->
         <activity
             android:name=".ui.auth.AuthActivity"
             android:exported="false"

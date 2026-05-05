@@ -49,7 +49,7 @@ fun PlayerScreen(
                 .padding(horizontal = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Топбар
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -78,13 +78,13 @@ fun PlayerScreen(
                         color = Color.White
                     )
                 }
-                // Placeholder для симметрии
+
                 Spacer(Modifier.size(48.dp))
             }
 
             Spacer(Modifier.height(32.dp))
 
-            // Обложка
+
             Box(
                 modifier = Modifier
                     .size(280.dp)
@@ -94,7 +94,7 @@ fun PlayerScreen(
 
             Spacer(Modifier.height(40.dp))
 
-            // Название и лайк
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -122,7 +122,7 @@ fun PlayerScreen(
 
             Spacer(Modifier.height(24.dp))
 
-            // Прогресс (заглушка)
+
             var sliderPos by remember { mutableFloatStateOf(0.3f) }
             Slider(
                 value = sliderPos,
@@ -155,7 +155,6 @@ fun PlayerScreen(
 
             Spacer(Modifier.height(24.dp))
 
-            // Контролы
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly,
@@ -170,7 +169,6 @@ fun PlayerScreen(
                     )
                 }
 
-                // Кнопка Play/Pause
                 Box(
                     modifier = Modifier
                         .size(64.dp)

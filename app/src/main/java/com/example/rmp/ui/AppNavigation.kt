@@ -30,7 +30,6 @@ fun AppNavigation(username: String) {
         bottomBar = {
             if (showBottomBar) {
                 Column {
-                    // Мини-плеер над таббаром
                     playerState.currentTrack?.let { track ->
                         MiniPlayer(
                             track = track,
