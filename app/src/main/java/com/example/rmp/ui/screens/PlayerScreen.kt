@@ -7,7 +7,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.FavoriteBorder  // Изменено: out вместо filled
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -15,8 +15,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import com.example.rmp.ui.player.MusicViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -25,11 +27,17 @@ fun PlayerScreen(
     viewModel: MusicViewModel,
     onBack: () -> Unit
 ) {
-    val state   by viewModel.player.collectAsState()
+    val state    by viewModel.player.collectAsState()
     val likedIds by viewModel.likedIds.collectAsState()
 
     val track = state.currentTrack ?: run { onBack(); return }
     val isLiked = track.id in likedIds
+
+    // Прогресс из стейта, который тикер обновляет каждые 500мс
+    val progress = if (state.durationMs > 0)
+        (state.progressMs.toFloat() / state.durationMs).coerceIn(0f, 1f)
+    else 0f
+
     val coverColor = Color(track.coverColor)
 
     Box(
@@ -37,7 +45,10 @@ fun PlayerScreen(
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
-                    colors = listOf(coverColor.copy(alpha = 0.7f), Color.Black)
+                    colors = listOf(
+                        coverColor.copy(alpha = 0.8f),
+                        Color.Black
+                    )
                 )
             )
     ) {
@@ -49,7 +60,7 @@ fun PlayerScreen(
                 .padding(horizontal = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-
+            // Топбар
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -75,26 +86,38 @@ fun PlayerScreen(
                     Text(
                         track.album,
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color.White
+                        color = Color.White,
+                        maxLines = 1,
+                        textAlign = TextAlign.Center
                     )
                 }
-
                 Spacer(Modifier.size(48.dp))
             }
 
             Spacer(Modifier.height(32.dp))
 
-
-            Box(
-                modifier = Modifier
-                    .size(280.dp)
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(coverColor)
-            )
+            // Обложка
+            if (track.coverUrl.isNotEmpty()) {
+                AsyncImage(
+                    model = track.coverUrl,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(280.dp)
+                        .clip(RoundedCornerShape(20.dp)),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .size(280.dp)
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(coverColor)
+                )
+            }
 
             Spacer(Modifier.height(40.dp))
 
-
+            // Название + лайк
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -103,32 +126,34 @@ fun PlayerScreen(
                     Text(
                         track.title,
                         style = MaterialTheme.typography.headlineSmall,
-                        color = Color.White
+                        color = Color.White,
+                        maxLines = 1
                     )
                     Text(
                         track.artist,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color.White.copy(alpha = 0.7f)
+                        color = Color.White.copy(alpha = 0.7f),
+                        maxLines = 1
                     )
                 }
                 IconButton(onClick = { viewModel.toggleLike(track.id) }) {
                     Icon(
-                        imageVector = if (isLiked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                        imageVector = if (isLiked) Icons.Filled.Favorite
+                        else Icons.Outlined.FavoriteBorder,
                         contentDescription = null,
-                        tint = if (isLiked) MaterialTheme.colorScheme.primary else Color.White
+                        tint = if (isLiked) MaterialTheme.colorScheme.primary
+                        else Color.White
                     )
                 }
             }
 
             Spacer(Modifier.height(24.dp))
 
-
-            var sliderPos by remember { mutableFloatStateOf(0.3f) }
+            // Слайдер — теперь двигается от тикера, а не от локального state
             Slider(
-                value = sliderPos,
-                onValueChange = {
-                    sliderPos = it
-                    viewModel.seekTo((it * track.durationMs).toLong())
+                value = progress,
+                onValueChange = { fraction ->
+                    viewModel.seekTo((fraction * state.durationMs).toLong())
                 },
                 colors = SliderDefaults.colors(
                     thumbColor = Color.White,
@@ -142,12 +167,12 @@ fun PlayerScreen(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    formatDuration((sliderPos * track.durationMs).toLong()),
+                    formatDuration(state.progressMs),
                     style = MaterialTheme.typography.labelSmall,
                     color = Color.White.copy(alpha = 0.7f)
                 )
                 Text(
-                    formatDuration(track.durationMs),
+                    formatDuration(state.durationMs),
                     style = MaterialTheme.typography.labelSmall,
                     color = Color.White.copy(alpha = 0.7f)
                 )
@@ -155,6 +180,7 @@ fun PlayerScreen(
 
             Spacer(Modifier.height(24.dp))
 
+            // Контролы
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly,
@@ -163,7 +189,7 @@ fun PlayerScreen(
                 IconButton(onClick = { viewModel.skipPrev() }) {
                     Icon(
                         Icons.Default.SkipPrevious,
-                        contentDescription = "Назад",
+                        contentDescription = "Предыдущий",
                         tint = Color.White,
                         modifier = Modifier.size(36.dp)
                     )
@@ -178,7 +204,8 @@ fun PlayerScreen(
                 ) {
                     IconButton(onClick = { viewModel.togglePlayPause() }) {
                         Icon(
-                            imageVector = if (state.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                            imageVector = if (state.isPlaying) Icons.Default.Pause
+                            else Icons.Default.PlayArrow,
                             contentDescription = null,
                             tint = Color.Black,
                             modifier = Modifier.size(36.dp)
@@ -189,7 +216,7 @@ fun PlayerScreen(
                 IconButton(onClick = { viewModel.skipNext() }) {
                     Icon(
                         Icons.Default.SkipNext,
-                        contentDescription = "Далее",
+                        contentDescription = "Следующий",
                         tint = Color.White,
                         modifier = Modifier.size(36.dp)
                     )
@@ -200,6 +227,7 @@ fun PlayerScreen(
 }
 
 private fun formatDuration(ms: Long): String {
+    if (ms <= 0) return "0:00"
     val totalSeconds = ms / 1000
     val minutes = totalSeconds / 60
     val seconds = totalSeconds % 60

@@ -5,15 +5,14 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.collectAsState
-import com.example.rmp.data.SampleData
 import com.example.rmp.ui.player.MusicViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -21,10 +20,12 @@ import com.example.rmp.ui.player.MusicViewModel
 fun ProfileScreen(
     viewModel: MusicViewModel,
     username: String,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onLogout: () -> Unit   // новый параметр
 ) {
-    val likedIds by viewModel.likedIds.collectAsState()
-    val history  by viewModel.history.collectAsState()
+    val likedIds  by viewModel.likedIds.collectAsState()
+    val history   by viewModel.history.collectAsState()
+    val playlists by viewModel.playlists.collectAsState()
 
     Scaffold(
         topBar = {
@@ -33,6 +34,9 @@ fun ProfileScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
+                    }
+                    IconButton(onClick = onLogout) {
+                        Icon(Icons.Default.ExitToApp, contentDescription = "Выйти")
                     }
                 }
             )
@@ -45,7 +49,6 @@ fun ProfileScreen(
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Аватар-заглушка
             Box(
                 modifier = Modifier
                     .size(96.dp)
@@ -71,14 +74,13 @@ fun ProfileScreen(
 
             Spacer(Modifier.height(32.dp))
 
-            // Статистика
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                StatItem(value = likedIds.size.toString(),    label = "Лайков")
-                StatItem(value = history.size.toString(),     label = "В истории")
-                StatItem(value = SampleData.playlists.size.toString(), label = "Плейлистов")
+                StatItem(value = likedIds.size.toString(),   label = "Лайков")
+                StatItem(value = history.size.toString(),    label = "В истории")
+                StatItem(value = playlists.size.toString(),  label = "Плейлистов")
             }
         }
     }
@@ -88,7 +90,10 @@ fun ProfileScreen(
 private fun StatItem(value: String, label: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(value, style = MaterialTheme.typography.headlineSmall)
-        Text(label, style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(
+            label,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
