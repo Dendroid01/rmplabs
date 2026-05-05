@@ -15,6 +15,7 @@ import androidx.navigation.fragment.findNavController
 import com.example.rmp.R
 import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.launch
+import com.example.rmp.ui.auth.AuthActivity
 
 class LoginFragment : Fragment() {
 
@@ -49,16 +50,16 @@ class LoginFragment : Fragment() {
             viewLifecycleOwner.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
                 viewModel.state.collect { state ->
                     when (state) {
+                        is LoginState.Success -> {
+                            progressBar.visibility = View.GONE
+                            (requireActivity() as AuthActivity).onAuthSuccess()
+                            viewModel.resetState()
+                        }
                         is LoginState.Idle -> {
                             progressBar.visibility = View.GONE
                         }
                         is LoginState.Loading -> {
                             progressBar.visibility = View.VISIBLE
-                        }
-                        is LoginState.Success -> {
-                            progressBar.visibility = View.GONE
-                            findNavController().navigate(R.id.action_login_to_main)
-                            viewModel.resetState()
                         }
                         is LoginState.Error -> {
                             progressBar.visibility = View.GONE
